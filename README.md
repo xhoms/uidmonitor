@@ -55,3 +55,7 @@ TARGET="<ip:port>" PORT=8081 INSECURE=true go run .
 A Dockerfile is provided to pack the code in a distroless container.
 
 Or you can use the prebuild docker image
+
+```sh
+docker pull ghcr.io/xhoms/uidmonitor:latest
+```
