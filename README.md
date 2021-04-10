@@ -9,7 +9,7 @@ in several policies like session security or packet forwarding.
 The User-ID API allows, as well, registering these user objects (User Login/Logout) and
 these IP address objects (Object Register/Unregister)
 
-One of the most powerful features of the corresponding PAN-OS feature is both registration
+One of the most powerful details of the corresponding PAN-OS feature is both registration
 and tag transactions can contain a timeout value. This way the user can, for instance,
 register a user login with a 10 minute expiration mark and then leave the NGFW take care of
 removing the entry at its due time.
