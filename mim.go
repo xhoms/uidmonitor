@@ -19,28 +19,23 @@ var (
 	emptyEdl = []string{}
 )
 
-type mim struct {
-	mm       *uidmonitor.MemMonitor
-	hostport string
-	proxy    *httputil.ReverseProxy
+type manInMiddle struct {
+	mm    *uidmonitor.MemMonitor
+	proxy *httputil.ReverseProxy
 }
 
-func newMim(hostport string, insecure bool) (m mim, err error) {
-	var url *url.URL
-	if url, err = url.Parse("https://" + hostport); err == nil {
-		m = mim{
-			hostport: hostport,
-			mm:       uidmonitor.NewMemMonitor(),
-			proxy:    httputil.NewSingleHostReverseProxy(url),
-		}
-		if insecure {
-			m.proxy.Transport = &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}
-		}
+func newManInMiddle(url *url.URL, insecure bool) (m manInMiddle) {
+	m = manInMiddle{
+		mm:    uidmonitor.NewMemMonitor(),
+		proxy: httputil.NewSingleHostReverseProxy(url),
+	}
+	if insecure {
+		m.proxy.Transport = &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}
 	}
 	return
 }
 
-func (m mim) process(cmd string) {
+func (m manInMiddle) process(cmd string) {
 	var uidmsg *collection.UIDMessage = &collection.UIDMessage{}
 	if err := xml.Unmarshal([]byte(cmd), uidmsg); err == nil {
 		if uidmsg != nil {
@@ -50,7 +45,7 @@ func (m mim) process(cmd string) {
 	}
 }
 
-func (m mim) list(edl string, key string) (out []string) {
+func (m manInMiddle) list(edl string, key string) (out []string) {
 	m.mm.CleanUp(time.Now())
 	switch edl {
 	case "user":
@@ -65,7 +60,7 @@ func (m mim) list(edl string, key string) (out []string) {
 	return
 }
 
-func (m mim) proxyUID(w http.ResponseWriter, r *http.Request) {
+func (m manInMiddle) apiHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
 	if r.Method == http.MethodGet {
 		if r.URL.Query().Get("type") == "user-id" {
@@ -91,9 +86,9 @@ func (m mim) proxyUID(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// edl is the injected "/edl" API handler
+// edlHandler is the injected "/edlHandler" API handler
 // ?list=[user|group|tag]&key=<tag>
-func (m mim) edl(w http.ResponseWriter, r *http.Request) {
+func (m manInMiddle) edlHandler(w http.ResponseWriter, r *http.Request) {
 	out := &bytes.Buffer{}
 	for _, item := range m.list(
 		r.URL.Query().Get("list"),
@@ -106,6 +101,6 @@ func (m mim) edl(w http.ResponseWriter, r *http.Request) {
 	w.Write(out.Bytes())
 }
 
-func (m mim) proxyReverse(w http.ResponseWriter, r *http.Request) {
+func (m manInMiddle) defaultHandler(w http.ResponseWriter, r *http.Request) {
 	m.proxy.ServeHTTP(w, r)
 }
